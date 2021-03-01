@@ -1,16 +1,16 @@
 apiVersion: v2
-name: railinc-aws-application
+name: teemo-aws-application
 version: 1.0.15
-description: Deploys a standard railinc spring boot application to EKS
+description: Deploys a standard teemo spring boot application to EKS
 keywords:
-  - railinc
-home: "http://bitbucket.railinc.com:7990/projects"
+  - teemo
+home: "http://bitbucket.teemo.ai:7990/projects"
 sources:
-  - "http://bitbucket.railinc.com:7990/projects"
+  - "http://bitbucket.teemo.ai:7990/projects"
 maintainers: # (optional)
   - name: Application Architecture
-    email: AppArchitecture@railinc.com
+    email: AppArchitecture@teemo.ai
 engine: gotpl # The name of the template engine (optional, defaults to gotpl)
-icon: "https://www.railinc.com/Aauth/fcc/images/Railinc-Logo.png"
+icon: "https://www.teemo.ai/Aauth/fcc/images/teemo-Logo.png"
 appVersion: 1.0.0
 deprecated: false

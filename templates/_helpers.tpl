@@ -10,16 +10,16 @@ hosts:
     {{- end }}
 {{- else }}
 {{- if eq .Values.environment "prd" }}
-    - {{ printf "%s.apps.app.railinc.com" .Values.appname }}
+    - {{ printf "%s.apps.app.teemo.ai" .Values.appname }}
 {{- else }}
-    - {{ printf "%s.apps.app%s.railinc.com" .Values.appname .Values.environment }}
+    - {{ printf "%s.apps.app%s.teemo.ai" .Values.appname .Values.environment }}
 {{- end }}
 {{- end }}
 {{- end }}
 {{- end -}}
 
 {{/* Generate config map if values file has a configs section */}}
-{{ define "railinc-chart.configmap" }}
+{{ define "teemo-chart.configmap" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -34,7 +34,7 @@ data:
 {{ end }}
 
 {{/* Generate secrets if values file has a secrets section */}}
-{{ define "railinc-chart.secrets" }}
+{{ define "teemo-chart.secrets" }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -45,7 +45,7 @@ data:
 {{ end }}
 
 {{/* Generate gateway if values file has a ingress flag */}}
-{{ define "railinc-chart.gateway" }}
+{{ define "teemo-chart.gateway" }}
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:

@@ -1,4 +1,4 @@
 {{ if .Values.configs }}
-{{ template "railinc-chart.configmap" . }}
+{{ template "teemo-chart.configmap" . }}
 {{- end -}}
 

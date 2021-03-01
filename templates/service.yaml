@@ -5,7 +5,7 @@ metadata:
   labels:
     app: {{ .Values.appname }}
     management.port: {{ .Values.managementPort | default "8081" | quote }}
-    railinc.app: {{ .Values.railincApp | default "spring-boot-2" }}
+    teemo.app: {{ .Values.teemoApp | default "spring-boot-2" }}
 spec:
   {{ if .Values.customServicePorts }}
   {{.Values.customServicePorts}}

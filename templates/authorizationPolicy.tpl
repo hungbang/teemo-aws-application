@@ -16,7 +16,7 @@ spec:
             paths:
               - {{ .path }}
       when:
-        - key: request.auth.claims[railincPermissions]
+        - key: request.auth.claims[teemoPermissions]
           values: 
             {{- range .roles }}
             - {{ . | quote }}
