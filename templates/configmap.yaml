@@ -1,0 +1,4 @@
+{{ if .Values.configs }}
+{{ template "railinc-chart.configmap" . }}
+{{- end -}}
+

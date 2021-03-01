@@ -1,0 +1,43 @@
+appname: default-app
+version: 1.0.0
+environment: dev
+namespace: default
+deploymentType: "deployment"
+ingress: true #if app needs an istio gateway
+auth:
+  redirectToLogin: false # if true, requests failing auth (401/403) will redirect to SSO login
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "125m"
+  limits:
+    memory: "512Mi"
+    cpu: "1000m"
+configs: |-
+  spring:
+    datasource:
+      username: example
+secrets: |-
+  spring:
+    datasource:
+      password: secret1
+    activemq:
+      password: secret2
+podAnnotations: {}
+readinessProbe:
+  path: "/actuator/health"
+  port: 8081
+  initialDelaySeconds: 20
+  periodSeconds: 15
+  timeoutSeconds: 5
+livenessProbe:
+  path: "/actuator/"
+  port: 8081
+  initialDelaySeconds: 60
+  periodSeconds: 15
+  timeoutSeconds: 5
+
+istio:
+  virtualService: {}
+  ingress:
+    selector: "ingress: private"

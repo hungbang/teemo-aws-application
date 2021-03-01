@@ -1,0 +1,3 @@
+{{ if .Values.ingress }}
+{{ template "railinc-chart.gateway" . }}
+{{- end -}}

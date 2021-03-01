@@ -1,0 +1,16 @@
+apiVersion: v2
+name: railinc-aws-application
+version: 1.0.15
+description: Deploys a standard railinc spring boot application to EKS
+keywords:
+  - railinc
+home: "http://bitbucket.railinc.com:7990/projects"
+sources:
+  - "http://bitbucket.railinc.com:7990/projects"
+maintainers: # (optional)
+  - name: Application Architecture
+    email: AppArchitecture@railinc.com
+engine: gotpl # The name of the template engine (optional, defaults to gotpl)
+icon: "https://www.railinc.com/Aauth/fcc/images/Railinc-Logo.png"
+appVersion: 1.0.0
+deprecated: false

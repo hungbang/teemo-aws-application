@@ -1,0 +1,115 @@
+{{ if eq .Values.deploymentType "deployment" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.appname }}
+  labels:
+    app: {{ .Values.appname }}
+spec:
+  replicas: {{ .Values.replicas | default "2" }}
+  selector:
+    matchLabels:
+      app: {{ .Values.appname }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  minReadySeconds: {{ .Values.minReadySeconds | default "20" }}
+  progressDeadlineSeconds: {{ .Values.progressDeadlineSeconds | default "60" }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit | default "2" }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      name: {{ .Values.appname }}
+      labels:
+        app: {{ .Values.appname }}
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+                - matchExpressions:
+                  - key: "node-role.kubernetes.io/master"
+                    operator: DoesNotExist
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - {{ .Values.appname }}
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+        - image: {{ .Values.image | default (printf "956730897117.dkr.ecr.us-east-1.amazonaws.com/%s/%s:%s" .Values.namespace .Values.appname .Values.version ) | quote }}
+          name: {{ .Values.appname }}
+          imagePullPolicy: Always
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: {{ .Values.environment }}
+            # - name: DD_AGENT_HOST
+            #   valueFrom:
+            #     fieldRef:
+            #       fieldPath: status.hostIP
+            - name: DD_SERVICE_NAME
+              value: {{ .Values.appname }}
+            - name: DD_JMXFETCH_ENABLED
+              value: "true"
+            # - name: DD_AGENT_OPTS
+            #   value: "-javaagent:/dd-java-agent.jar"
+            - name: JAVA_OPTS
+              value: {{ .Values.java_opts | default "-XX:MaxRAMPercentage=70.0" }}
+            - name: GC_OPTS
+              value: {{ .Values.gc_opts | default " " }}
+{{- if .Values.contrast }}              
+            - name: CONTRAST_AGENT_OPTS
+              value: "-javaagent:/contrast-agent.jar -Ddd.trace.classes.exclude=com.contrast*"
+            - name: CONTRAST_CONFIG_PATH
+              value: {{ printf "/contrast-security-%s.yaml" .Values.environment }}
+{{- end }}
+            - name: JAVA_TOOL_OPTIONS
+              value: "{{ if .Values.contrast }}$(CONTRAST_AGENT_OPTS){{ end }} $(GC_OPTS) $(JAVA_OPTS)"
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory | quote }}
+              cpu: {{ .Values.resources.requests.cpu | quote }}
+            limits:
+              memory: {{ .Values.resources.limits.memory | quote }}
+              cpu: {{ .Values.resources.limits.cpu | quote }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessProbe.path }}
+              port: {{ .Values.readinessProbe.port }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{.Values.readinessProbe.timeoutSeconds }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.path }}
+              port: {{ .Values.livenessProbe.port }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{.Values.readinessProbe.timeoutSeconds }}
+          ports:
+            - containerPort: {{ .Values.port | default "8080" }}
+              name: {{ .Values.port | default "port8080" | quote  }}
+          volumeMounts:
+              - name: {{ .Values.appname }}
+                mountPath: "/config"
+                readOnly: true
+      volumes:
+      - name: {{ .Values.appname }}
+        projected:
+          sources:
+          - secret:
+              name: {{ .Values.appname }}
+          {{- if .Values.mountConfigmap }}
+          - configMap:
+              name: {{ .Values.appname }} 
+          {{ end }}            
+{{ end }} 
+

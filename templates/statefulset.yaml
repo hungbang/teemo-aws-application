@@ -1,0 +1,89 @@
+{{ if eq .Values.deploymentType "statefulset" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.appname }}-headless
+  labels:
+    app: {{ .Values.appname }}
+spec:
+  clusterIP: None
+  selector:
+    app: {{ .Values.appname }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.appname }}
+  labels:
+    app: {{ .Values.appname }}
+spec:
+  replicas: {{ .Values.replicas | default "2" }}
+  selector:
+    matchLabels:
+      app: {{ .Values.appname }}
+  serviceName: {{ .Values.appname }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit | default "2" }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      name: {{ .Values.appname }}
+      labels:
+        app: {{ .Values.appname }}
+    spec:
+      containers:
+        - image: {{ .Values.image | default (printf "956730897117.dkr.ecr.us-east-1.amazonaws.com/%s/%s:%s" .Values.namespace .Values.appname .Values.version ) | quote }}
+          imagePullPolicy: Always
+          name: {{ .Values.appname }}
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: SPRING_PROFILES_ACTIVE
+              value: {{ .Values.environment }},{{ .Values.environment }}-$(POD_NAME)
+            - name: DD_AGENT_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: DD_SERVICE_NAME
+              value: {{ .Values.appname }}
+            - name: DD_JMXFETCH_ENABLED
+              value: "true"
+            - name: CONTRAST_CONFIG_PATH
+              value: {{ printf "/contrast-security-%s.yaml" .Values.environment }}
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory | quote }}
+              cpu: {{ .Values.resources.requests.cpu | quote }}
+            limits:
+              memory: {{ .Values.resources.limits.memory | quote }}
+              cpu: {{ .Values.resources.limits.cpu | quote }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessProbe.path }}
+              port: {{ .Values.readinessProbe.port }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{.Values.readinessProbe.timeoutSeconds }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.path }}
+              port: {{ .Values.livenessProbe.port }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{.Values.readinessProbe.timeoutSeconds }}
+          ports:
+            - containerPort: {{ .Values.port | default "8080" }}
+              name: {{ .Values.port | default "port8080" | quote  }}
+          volumeMounts:
+            - name: {{ .Values.appname }}
+              mountPath: "/config"
+              readOnly: true
+      volumes:
+        - name: {{ .Values.appname }}
+          secret:
+            secretName: {{ .Values.appname }}
+{{ end }}

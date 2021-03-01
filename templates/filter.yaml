@@ -1,0 +1,56 @@
+{{ if .Values.auth.redirectToLogin }}
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: {{ .Values.appname }}
+  labels:
+    app: {{ .Values.appname }}
+  namespace: istio-system
+spec:
+  workloadSelector:
+    labels:
+      {{ .Values.istio.ingress.selector }}
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: envoy.http_connection_manager
+              subFilter:
+                name: istio.metadata_exchange
+      patch:
+        operation: INSERT_AFTER
+        value:
+          name: envoy.lua
+          config:
+            inlineCode: |
+              local function starts_with(str, start)
+                return str:sub(1, #start) == start
+              end
+
+              function envoy_on_request(request_handle)
+                -- get the hostname (aka authority in HTTP/2)
+                authority = request_handle:headers():get(":authority") or ""
+
+                -- if the request is for us, indicate redirect for auth
+                {{ if .Values.hosts }}
+                if authority == "{{- join "\" or authority == \"" .Values.hosts -}}" then
+                {{ else }}
+                if authority == "{{- .Values.host -}}" then
+                {{ end }}
+                  {{- if .Values.auth.redirectMatchPath }}
+                  path = request_handle:headers():get(":path") or ""
+                  if starts_with(path, "{{ .Values.auth.redirectMatchPath }}") then
+                    request_handle:logWarn("configuring auth redirect")
+                    request_handle:streamInfo():dynamicMetadata():set("auth_config", "redirect", true)
+                  end
+                  {{- else }}
+                  request_handle:logWarn("configuring auth redirect")
+                  request_handle:streamInfo():dynamicMetadata():set("auth_config", "redirect", true)
+                  {{- end }}
+                end
+              end
+
+{{ end }}

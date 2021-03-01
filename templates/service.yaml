@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.appname }}
+  labels:
+    app: {{ .Values.appname }}
+    management.port: {{ .Values.managementPort | default "8081" | quote }}
+    railinc.app: {{ .Values.railincApp | default "spring-boot-2" }}
+spec:
+  {{ if .Values.customServicePorts }}
+  {{.Values.customServicePorts}}
+  {{ else }}
+  ports:
+    - name: http
+      port: {{ .Values.port | default "8080" }}
+      targetPort: {{ .Values.port | default "8080" }}
+  {{ end }}
+  selector:
+    app: {{ .Values.appname }}
+  type: ClusterIP
